@@ -1,0 +1,7 @@
+Run this on terminal to download files (FASTQ)
+conda install -c bioconda sra-tools
+
+while read -r sra; do
+    echo "Downloading $sra..."
+    fasterq-dump "$sra" --split-files --outdir "/Users/viraajv/Documents/BCB5460_Final Project"
+done < SRR_Acc_List.txt
