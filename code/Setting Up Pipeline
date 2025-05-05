@@ -1,0 +1,26 @@
+## Open Package Manager
+Homebrew is a package manager for MacOS
+Helps install tools and packages for pre-processing
+Homebrew 4.4.27
+
+## Initiate Conda
+Conda is another tool that helps install all relevant tools and stores it in an environment. First install Conda and initialize. Then create an environment/pipeline where you install specific tools for a project and activate it.
+conda 24.11.3
+conda create -n miR_ref_pipeline -y
+conda activate miR_ref_pipeline
+
+## Downloading and Extracting Packages
+Our pipeline was named miR_ref since we’re trying to replicate the reference pipeline from the Journal Article. 
+Conda downloads software from different channels called channels. They are bioinformatics specialized (bioconda) and conda (default) and community channels (conda-forge)
+
+conda install -c bioconda -c conda-forge fastqc cutadapt mirdeep2 multiqc bowtie -y
+conda install -c bioconda samtools
+conda install -c bioconda seqtk
+
+## Version Control - Check Versions for all tools
+FastQC v0.12.1
+cutadapt --version 5.0
+multiqc, version 1.28
+bowtie-align-s version 1.3.1
+miRDeep2.0.1.3  
+samtools 1.21
