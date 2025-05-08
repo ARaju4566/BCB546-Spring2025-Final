@@ -1,0 +1,68 @@
+# Load necessary libraries
+library(edgeR)
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+library(ggrepel)
+
+# Load the merged count data
+counts <- read.csv("final_merged_counts.csv", row.names = 1)
+
+# Define each group explicitly
+placebo_wt <- c("SRR18856093", "SRR18856106", "SRR18856118", "SRR18856119", "SRR18856130")
+placebo_zdf <- c("SRR18856092", "SRR18856104", "SRR18856105", "SRR18856117", "SRR18856129")
+insulin_zdf <- c("SRR18856101", "SRR18856114", "SRR18856126")
+antisclerostin_zdf <- c("SRR18856087", "SRR18856099", "SRR18856112", "SRR18856124")
+
+# Combine into a dataframe for group mapping
+group_info <- data.frame(
+  sample = c(placebo_wt, placebo_zdf, insulin_zdf, antisclerostin_zdf),
+  group = c(
+    rep("Placebo_WT", length(placebo_wt)),
+    rep("Placebo_ZDF", length(placebo_zdf)),
+    rep("Insulin_ZDF", length(insulin_zdf)),
+    rep("AntiSclerostin_ZDF", length(antisclerostin_zdf))
+  )
+)
+
+# Reorder counts to match sample order
+counts <- counts[, group_info$sample]
+
+# Normalize using edgeR
+dge <- DGEList(counts = counts)
+dge <- calcNormFactors(dge)
+cpm_norm <- cpm(dge, log = FALSE)
+
+# Define 4 miRNAs of interest
+miRNAs_to_plot <- c("rno-miR-320-3p", "rno-miR-218a-5p", "rno-miR-199a-3p", "rno-miR-100-5p")
+
+
+# Order the 'group' factor levels before merging
+group_info$group <- factor(group_info$group, levels = c("Placebo_WT", "Placebo_ZDF", "Insulin_ZDF", "AntiSclerostin_ZDF"))
+
+# Melt for ggplot
+df_cpm <- melt(cpm_norm[miRNAs_to_plot, ])
+colnames(df_cpm) <- c("miRNA", "sample", "CPM")
+df_cpm <- merge(df_cpm, group_info, by = "sample")
+
+# Make sure 'group' in df_cpm has the same factor levels
+df_cpm$group <- factor(df_cpm$group, levels = c("Placebo_WT", "Placebo_ZDF", "Insulin_ZDF", "AntiSclerostin_ZDF"))
+
+# Plot with the specific order of groups
+for (mir in miRNAs_to_plot) {
+  df_sub <- df_cpm[df_cpm$miRNA == mir, ]
+  
+  p <- ggplot(df_sub, aes(x = group, y = CPM)) +
+    geom_jitter(width = 0.1, size = 6) +
+    stat_summary(fun = mean, geom = "point", color = "orange", size = 12) +
+    stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.4) +
+    labs(title = mir, y = "Reads per Million (RPM)", x = "") +
+    theme_minimal() +
+    theme(
+      axis.title.x = element_text(size = 20, face = "bold"),
+      axis.title.y = element_text(size = 20, face = "bold"),
+      axis.text.x = element_text(size = 20, face = "bold", angle = 30, hjust = 1),
+      axis.text.y = element_text(size = 20, face = "bold")
+    )
+  print(p)
+}
