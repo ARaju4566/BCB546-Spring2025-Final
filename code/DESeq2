@@ -1,0 +1,46 @@
+# Load required libraries
+library(DESeq2)
+
+# Step 1: Read in the count matrix
+count_data_raw <- read.csv("final_merged_counts.csv", row.names = 1, check.names = FALSE)
+
+# Step 2: Define your sample groups (these are the columns in your CSV)
+ZDF_anti-scl_samples <- c("SRR18856087", "SRR18856099", "SRR18856112", "SRR18856124")
+ZDF_Placebo_samples  <- c("SRR18856092", "SRR18856104", "SRR18856105", "SRR18856117" ,"SRR18856129")
+
+# Subset the count data to only those samples
+subset_samples <- c(ZDF_anti-scl_samples, ZDF_Placebo_samples)
+count_data <- count_data_raw[, subset_samples]
+
+# Step 3: Create metadata
+sample_info <- data.frame(
+  condition = c(rep("ZDF_anti-scl", length(ZDF_anti-scl_samples)), rep("ZDF_Placebo", length(ZDF_Placebo_samples))),
+  row.names = subset_samples
+)
+
+# Step 4: Filter low-expressed miRNAs (keep those with count >= 5 in at least 3 samples)
+filtered_counts <- count_data[rowSums(count_data >= 5) >= 3, ]
+
+# Step 5: Run DESeq2
+dds <- DESeqDataSetFromMatrix(countData = filtered_counts,
+                              colData = sample_info,
+                              design = ~ condition)
+dds <- DESeq(dds)
+
+# Step 6: Extract results
+res <- results(dds, contrast = c("condition", "ZDF_anti-scl", "ZDF_Placebo"))
+
+
+# Step 1: Save full results
+write.csv(as.data.frame(res), file = "ZDF_AntiSclvsPlacebo.csv")
+
+# Step 2: Filter for significant miRNAs (adjusted p-value < 0.05)
+sig_res <- res[which(res$padj < 0.05), ]
+sig_res <- sig_res[order(sig_res$padj), ]  # Sort by significance
+
+# Step 3: Save significant results
+write.csv(as.data.frame(sig_res), file = "ZDF_AntiSclvsPlacebo.csv")
+
+# Step 4: Print top DE miRNAs
+cat("Top differentially expressed miRNAs (padj < 0.05):\n")
+head(sig_res)
