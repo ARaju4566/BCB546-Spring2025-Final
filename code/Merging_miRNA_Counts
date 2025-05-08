@@ -1,0 +1,88 @@
+# Load required library
+library(dplyr)
+library(data.table)
+
+# Define expression file directory
+expression_dir <- "/Users/viraajv/Documents/BCB5460_Final_Project/Analysis/2nd Try"
+
+# Get list of expression files
+expression_files <- list.files(path = expression_dir, pattern = "miRNAs_expressed_all_samples_.*\\.csv", full.names = TRUE)
+
+# Initialize an empty list to store data frames
+count_list <- list()
+
+# Loop through and extract miRNA + read count
+for (file in expression_files) {
+  sample_name <- sub(".*miRNAs_expressed_all_samples_(SRR[0-9]+)\\.csv", "\\1", file)
+  df <- read.delim(file)
+
+  if (all(c("X.miRNA", "read_count") %in% colnames(df))) {
+    df_agg <- aggregate(read_count ~ X.miRNA, data = df, sum)
+    colnames(df_agg) <- c("miRNA", sample_name)
+    count_list[[sample_name]] <- df_agg
+  } else {
+    warning(paste("⚠️ Skipping file due to missing columns:", file))
+  }
+}
+
+# Set batch size for merging
+batch_size <- 16
+num_batches <- ceiling(length(count_list) / batch_size)
+batch_files <- character()
+
+# Create output directory for merged batches
+output_dir <- file.path(expression_dir, "merged_batches")
+dir.create(output_dir, showWarnings = FALSE)
+
+# Batch merge loop
+for (i in seq_len(num_batches)) {
+  cat("Merging batch", i, "...\n")
+  
+  start_idx <- (i - 1) * batch_size + 1
+  end_idx <- min(i * batch_size, length(count_list))
+  
+  batch_df <- count_list[[start_idx]]
+  
+  for (j in (start_idx + 1):end_idx) {
+    batch_df <- merge(batch_df, count_list[[j]], by = "miRNA", all = TRUE)
+    gc()
+  }
+  
+  batch_file <- file.path(output_dir, paste0("batch_", i, ".csv"))
+  fwrite(batch_df, batch_file)
+  batch_files <- c(batch_files, batch_file)
+  
+  rm(batch_df)
+  gc()
+}
+
+# Final merge of batch files
+final_merged <- fread(batch_files[1])
+for (file in batch_files[-1]) {
+  temp <- fread(file)
+  final_merged <- merge(final_merged, temp, by = "miRNA", all = TRUE)
+  gc()
+}
+
+# Final output path
+final_output_path <- file.path(expression_dir, "final_merged_counts.csv")
+fwrite(final_merged, final_output_path)
+cat("Final merged file saved to:", final_output_path, "\n")
+
+To remove all the 0 values in the rows 
+# Load required library
+library(data.table)
+
+# Define the path to the final merged file
+final_merged_file <- "/Users/viraajv/Documents/BCB5460_Final_Project/Analysis/2nd Try/final_merged_counts.csv"
+
+# Read the merged file into a data.table
+final_merged <- fread(final_merged_file)
+
+# Remove rows where all values (except 'miRNA' column) are zero
+final_merged_cleaned <- final_merged[rowSums(final_merged[, -1, with = FALSE]) > 0, ]
+
+# Save the cleaned file
+final_cleaned_file <- "/Users/viraajv/Documents/BCB5460_Final_Project/Analysis/2nd Try/final_merged_cleaned_counts.csv"
+fwrite(final_merged_cleaned, final_cleaned_file)
+
