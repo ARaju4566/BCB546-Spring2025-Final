@@ -18,3 +18,7 @@ Add information here
 
 # Data Storage
 Due to the large amount of data generated (60 GB +), github did not work as a storage solution. So, all data generated from our methods was uploaded to CyBox (https://iastate.account.box.com/login).
+
+# Organization
+
+All data generated that was not uploaded to github will be located in the data folder, and any code generated for data inspection, processing, and visualization will be located in the code folder. If you would like to find more information about specific chunks of the code works, it will likely be located in the script with a name similar to the process you are interested in, in the code comments.
