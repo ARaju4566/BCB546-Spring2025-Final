@@ -27,4 +27,28 @@ We decided to replicate the volcano graphs because they depict the main findings
 
 
 # Technical Details
+The study aimes to analyse the differential expression levels of miRNA extracted from Zucker Diabetic Fatty model (ZDF) and wild type rats.
+RNA sequencing was performed for serum or ulna bone samples after these rats were treated with anti-sclerotsin, parathyroid hormone, insulin and placebo as control. 
+RNA sequencing helps to analyse which of the miRNAs are upregulated, downregulated so that these results can be associated to the physiological and biochemcial symtomps seen with T2DM.
 
+RNA analysis pipeline 
+The SRA sequences were extracted from GEO accession server as directed by the authors in the paper. The quality of the NGC data was then analyzed with FASTQC and MULTIQC. Since sequences have adapters at the ends they were trimmed and was performed used the software Cutadapt. We obtained cleaned .fastq files which were converted to fasta files and sequences which were less than 17bp were filtered out before the next step.
+
+We then used miRDeep2 which is a software used for identification of novel and known miRNAs in deep sequencing data as well as for miRNA expression profiling across samples
+We used 2 of the components in this software namely the mapper.pl and quantifier.pl
+
+1. mapper.pl : this processes reads and/or maps them to the reference genome.
+   Input files: Default input is a file in fasta, seq.txt or qseq.txt format. More input can be given depending on the
+   options used.
+   Output files: A fasta file with precursor sequences, a fasta file with mature miRNA sequences, a fasta file with deep 
+   sequencing reads and optionally a fasta file with star sequences and the 3 letter code of the species of interest
+2. quantifier.pl: The module maps the deep sequencing reads to predefined miRNA precursors and determines by that the 
+   expression of the corresponding miRNAs. First, the predefined mature miRNA sequences are mapped to the predefined 
+   precursors.
+   Input files: Files genrated form mapper.pl are input into the quantifier part.
+   output files: A tab separated file called miRNAs_expressed_all_samples.csv with miRNA identifiers and its read count, a 
+   signature file called miRBase.mrd, a file called expression.html that gives an overview of all miRNAs.
+
+Visualisation
+Differential expression analysis was performed using edgeR using the quasi-likelihood negative binomial generalized log-linear model functions provided by the package. The independent filtering method of DESeq2 was adapted for use with edgeR to remove low-abundance miRNAs and thus optimize the false discovery rate (FDR) correction.
+Volcano plots were generated for the placebo samples and later for the treated samples using EnhancedVolcano in R program. 
