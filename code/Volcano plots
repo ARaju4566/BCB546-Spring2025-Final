@@ -1,0 +1,32 @@
+dds <- DESeq(dds)
+res <- results(dds, contrast = c("condition", "ZDF_insulin", "ZDF_placebo"))
+
+# Step 1: Save results
+write.csv(as.data.frame(res), file = "FIG_3B_full.csv")
+#load library
+library(EnhancedVolcano)
+
+#volcano code 
+EnhancedVolcano(res,
+                lab = rownames(res),
+                x = 'log2FoldChange',
+                y = 'padj',  # <-- Use adjusted p-values here
+                pCutoff = 0.2,  # Adjust this threshold based on your goal
+                FCcutoff = 0,
+                title = "ZDF insulin vs ZDF placebo miRNA",
+                subtitle = NULL,
+                caption = NULL,
+                ylab = expression(-Log[10]~adjusted~italic(P)),  # Label for padj
+                xlab = expression(Log[2]~fold~change),
+                legendLabels = c("NS", "Log2 FC", "padj", "FDR < 0.2"),
+                legendPosition = "top",
+                col = c("grey70", "darkgreen", "royalblue", "firebrick"),
+                colAlpha = 0.6,
+                pointSize = 1.2,
+                labSize = 3,
+                drawConnectors = FALSE,
+                boxedLabels = FALSE,
+                maxoverlaps = 10,
+                ylim = c(0, 2),
+                xlim = c(-3, 3)
+)
